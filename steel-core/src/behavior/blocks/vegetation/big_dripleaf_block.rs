@@ -1,31 +1,34 @@
-use rand::RngExt;
+use rand::{Rng, RngExt};
 use std::sync::Arc;
 use steel_macros::block_behavior;
 use steel_registry::blocks::block_state_ext::BlockStateExt;
 use steel_registry::blocks::properties::{BlockStateProperties, BoolProperty, EnumProperty, Tilt};
+use steel_registry::fluid::{FluidState, FluidStateExt};
 use steel_registry::sound_event::SoundEventRef;
 use steel_registry::sound_events::{BLOCK_BIG_DRIPLEAF_TILT_DOWN, BLOCK_BIG_DRIPLEAF_TILT_UP};
 use steel_registry::vanilla_block_tags::BlockTag;
 use steel_registry::vanilla_blocks;
 use steel_utils::types::UpdateFlags;
-use steel_utils::{BlockPos, BlockStateId};
+use steel_utils::{BlockPos, BlockStateId, Direction};
 
+use super::BlockRef;
+use crate::behavior::BlockStateBehaviorExt;
 use crate::behavior::block::BlockBehavior;
+use crate::behavior::blocks::vegetation::bonemealable::{BonemealAction, Bonemealable};
 use crate::behavior::context::BlockPlaceContext;
 use crate::entity::{Entity, InsideBlockEffectCollector};
 use crate::world::tick_scheduler::TickPriority;
 use crate::world::{LevelReader, World};
 
-use super::BlockRef;
-
 const TILT: EnumProperty<Tilt> = BlockStateProperties::TILT;
 const WATERLOGGED: BoolProperty = BlockStateProperties::WATERLOGGED;
+const FACING: EnumProperty<Direction> = BlockStateProperties::FACING;
 
 /// Vanilla `BigDripleafBlock` survival.
 ///
 /// Survives if the block below is big dripleaf (self), big dripleaf stem, or
 /// in the `SUPPORTS_BIG_DRIPLEAF` tag.
-// TODO: Implement tilt-on-stand, projectile tilt, bonemeal stem growth.
+// TODO: Implement projectile tilt.
 #[block_behavior]
 pub struct BigDripleafBlock {
     block: BlockRef,
@@ -38,7 +41,7 @@ impl BigDripleafBlock {
         Self { block }
     }
     fn can_entity_tilt(pos: &BlockPos, entity: &dyn Entity) -> bool {
-        entity.on_ground() && entity.position().y > pos.y() as f64 + 0.6875_f64
+        entity.on_ground() && entity.position().y > f64::from(pos.y()) + 0.6875_f64
     }
     fn set_tilt_and_schedule_tick(
         &self,
@@ -80,6 +83,29 @@ impl BigDripleafBlock {
             Self::play_tilt_sound(world, pos, &BLOCK_BIG_DRIPLEAF_TILT_UP);
         }
     }
+    fn can_replace(old_state: BlockStateId) -> bool {
+        old_state.is_air()
+            || old_state.get_block() == &vanilla_blocks::WATER
+            || old_state.get_block() == &vanilla_blocks::SMALL_DRIPLEAF
+    }
+    /// Determines whether big dripleaf can grow into target position
+    pub fn can_grow_into(world: &dyn LevelReader, pos: BlockPos) -> bool {
+        let state = world.get_block_state(pos);
+        !world.is_outside_build_height(pos.y()) && Self::can_replace(state)
+    }
+    /// Places big dripleaf block on target position with properties
+    pub fn place(
+        world: &Arc<World>,
+        pos: BlockPos,
+        fluid_state: FluidState,
+        facing: Direction,
+    ) -> bool {
+        let new_state = vanilla_blocks::BIG_DRIPLEAF
+            .default_state()
+            .set_value(&WATERLOGGED, fluid_state.is_water())
+            .set_value(&FACING, facing);
+        world.set_block(pos, new_state, UpdateFlags::UPDATE_ALL)
+    }
 }
 
 impl BlockBehavior for BigDripleafBlock {
@@ -92,9 +118,22 @@ impl BlockBehavior for BigDripleafBlock {
     }
 
     fn get_state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
-        let state = self.block.default_state();
-        self.can_survive(state, context.world, context.relative_pos)
-            .then_some(state.set_value(&WATERLOGGED, context.is_water_source()))
+        let below_state = context.world.get_block_state(context.clicked_pos.below());
+        let below_is_dripleaf_part = below_state.get_block() == &vanilla_blocks::BIG_DRIPLEAF
+            || below_state.get_block() == &vanilla_blocks::BIG_DRIPLEAF_STEM;
+        let facing = {
+            if below_is_dripleaf_part {
+                below_state.get_value(&FACING)
+            } else {
+                context.horizontal_direction.opposite()
+            }
+        };
+        Some(
+            self.block
+                .default_state()
+                .set_value(&WATERLOGGED, context.is_water_source())
+                .set_value(&FACING, facing),
+        )
     }
     fn entity_inside(
         &self,
@@ -108,7 +147,7 @@ impl BlockBehavior for BigDripleafBlock {
         let tilt = state.get_value(&TILT);
         //TODO: also check !level.hasNeighborSignal(pos)) once steel implements redstone
         if tilt == Tilt::None && BigDripleafBlock::can_entity_tilt(&pos, entity) {
-            Self::set_tilt_and_schedule_tick(&self, state, world, &pos, Tilt::Unstable, None);
+            Self::set_tilt_and_schedule_tick(self, state, world, &pos, Tilt::Unstable, None);
         }
     }
     fn tick(&self, state: BlockStateId, world: &Arc<World>, pos: BlockPos) {
@@ -119,7 +158,7 @@ impl BlockBehavior for BigDripleafBlock {
 
         if tilt == Tilt::Unstable {
             Self::set_tilt_and_schedule_tick(
-                &self,
+                self,
                 state,
                 world,
                 &pos,
@@ -128,7 +167,7 @@ impl BlockBehavior for BigDripleafBlock {
             );
         } else if tilt == Tilt::Partial {
             Self::set_tilt_and_schedule_tick(
-                &self,
+                self,
                 state,
                 world,
                 &pos,
@@ -139,5 +178,53 @@ impl BlockBehavior for BigDripleafBlock {
             Self::reset_tilt(state, world, &pos);
         }
         //}
+    }
+    fn as_bonemealable(&self) -> Option<&dyn Bonemealable> {
+        Some(self)
+    }
+}
+impl Bonemealable for BigDripleafBlock {
+    fn is_valid_bonemeal_target(
+        &self,
+        _state: BlockStateId,
+        world: &dyn LevelReader,
+        pos: BlockPos,
+    ) -> bool {
+        let grow_pos = pos.above();
+        Self::can_grow_into(world, grow_pos)
+    }
+
+    fn is_bonemeal_success(
+        &self,
+        _state: BlockStateId,
+        _world: &Arc<World>,
+        _rng: &mut dyn Rng,
+        _pos: BlockPos,
+    ) -> bool {
+        true
+    }
+
+    fn perform_bonemeal(
+        &self,
+        state: BlockStateId,
+        world: &Arc<World>,
+        _rng: &mut dyn Rng,
+        pos: BlockPos,
+    ) {
+        let above_pos = pos.above();
+        if Self::can_grow_into(world, pos) {
+            let facing = state.get_value(&FACING);
+            //stemblockplace
+            Self::place(
+                world,
+                above_pos,
+                world.get_block_state(above_pos).get_fluid_state(),
+                facing,
+            );
+        }
+    }
+
+    fn bonemeal_action_type(&self) -> BonemealAction {
+        BonemealAction::Grower
     }
 }
