@@ -8,17 +8,19 @@ use steel_registry::sound_event::SoundEventRef;
 use steel_registry::sound_events::{BLOCK_BIG_DRIPLEAF_TILT_DOWN, BLOCK_BIG_DRIPLEAF_TILT_UP};
 use steel_registry::vanilla_block_tags::BlockTag;
 use steel_registry::vanilla_blocks;
+use steel_registry::vanilla_fluids::{self};
 use steel_utils::types::UpdateFlags;
 use steel_utils::{BlockPos, BlockStateId, Direction};
 
 use super::BlockRef;
 use crate::behavior::BlockStateBehaviorExt;
 use crate::behavior::block::BlockBehavior;
+use crate::behavior::blocks::BigDripleafStemBlock;
 use crate::behavior::blocks::vegetation::bonemealable::{BonemealAction, Bonemealable};
 use crate::behavior::context::BlockPlaceContext;
 use crate::entity::{Entity, InsideBlockEffectCollector};
 use crate::world::tick_scheduler::TickPriority;
-use crate::world::{LevelReader, World};
+use crate::world::{LevelReader, ScheduledTickAccess, World};
 
 const TILT: EnumProperty<Tilt> = BlockStateProperties::TILT;
 const WATERLOGGED: BoolProperty = BlockStateProperties::WATERLOGGED;
@@ -116,7 +118,36 @@ impl BlockBehavior for BigDripleafBlock {
             || below_block == &vanilla_blocks::BIG_DRIPLEAF_STEM
             || below_block.has_tag(&BlockTag::SUPPORTS_BIG_DRIPLEAF)
     }
+    fn update_shape(
+        &self,
+        state: BlockStateId,
+        world: &dyn ScheduledTickAccess,
+        pos: BlockPos,
+        direction: Direction,
+        neighbor_pos: BlockPos,
+        neighbor_state: BlockStateId,
+    ) -> BlockStateId {
+        if direction == Direction::Down && !self.can_survive(state, world, pos) {
+            return vanilla_blocks::AIR.default_state();
+        } else {
+            if state.get_value(&WATERLOGGED) {
+                world.schedule_fluid_tick_default(
+                    pos,
+                    &vanilla_fluids::WATER,
+                    vanilla_fluids::WATER.tick_delay as i32,
+                );
+            }
 
+            if direction == Direction::Up && neighbor_state.get_block() == self.block {
+                vanilla_blocks::BIG_DRIPLEAF_STEM
+                    .default_state()
+                    .with_properties_of(state)
+            } else {
+                println!("1");
+                self.update_shape(state, world, pos, direction, neighbor_pos, neighbor_state)
+            }
+        }
+    }
     fn get_state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
         let below_state = context.world.get_block_state(context.clicked_pos.below());
         let below_is_dripleaf_part = below_state.get_block() == &vanilla_blocks::BIG_DRIPLEAF
@@ -212,9 +243,14 @@ impl Bonemealable for BigDripleafBlock {
         pos: BlockPos,
     ) {
         let above_pos = pos.above();
-        if Self::can_grow_into(world, pos) {
+        if Self::can_grow_into(world, above_pos) {
             let facing = state.get_value(&FACING);
-            //stemblockplace
+            BigDripleafStemBlock::place(
+                world,
+                pos,
+                world.get_block_state(pos).get_fluid_state(),
+                facing,
+            );
             Self::place(
                 world,
                 above_pos,

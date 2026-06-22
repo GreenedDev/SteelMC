@@ -36,7 +36,8 @@ impl BigDripleafStemBlock {
     pub const fn new(block: BlockRef) -> Self {
         Self { block }
     }
-    fn place(
+    /// places a big dripleaf stem block in target position with specific properties
+    pub fn place(
         world: &Arc<World>,
         pos: BlockPos,
         fluid_state: FluidState,
@@ -112,7 +113,11 @@ impl Bonemealable for BigDripleafStemBlock {
             &vanilla_blocks::BIG_DRIPLEAF,
         );
         match head_pos {
-            Some(head_pos) => BigDripleafBlock::can_grow_into(world, head_pos),
+            Some(head_pos) => {
+                let s = BigDripleafBlock::can_grow_into(world, head_pos);
+                println!("{s}");
+                s
+            }
             None => false,
         }
     }
@@ -134,6 +139,7 @@ impl Bonemealable for BigDripleafStemBlock {
         _rng: &mut dyn Rng,
         pos: BlockPos,
     ) {
+        println!("1");
         let forward_pos = Self::get_top_connected_block(
             world,
             pos,
@@ -144,6 +150,7 @@ impl Bonemealable for BigDripleafStemBlock {
         let Some(head_pos) = forward_pos else {
             return;
         };
+        println!("2");
         let place_head_pos = head_pos.above();
         let facing = state.get_value(&FACING);
         Self::place(
@@ -152,6 +159,7 @@ impl Bonemealable for BigDripleafStemBlock {
             world.get_block_state(head_pos).get_fluid_state(),
             facing,
         );
+        println!("3");
         BigDripleafBlock::place(
             world,
             place_head_pos,
