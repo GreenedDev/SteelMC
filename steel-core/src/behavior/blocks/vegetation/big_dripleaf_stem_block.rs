@@ -142,7 +142,7 @@ impl Bonemealable for BigDripleafStemBlock {
             &vanilla_blocks::BIG_DRIPLEAF,
         );
         match head_pos {
-            Some(head_pos) => BigDripleafBlock::can_grow_into(world, head_pos),
+            Some(head_pos) => BigDripleafBlock::can_grow_into(world, head_pos.above()),
             None => false,
         }
     }
