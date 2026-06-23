@@ -4,7 +4,7 @@ use steel_registry::blocks::block_state_ext::BlockStateExt;
 use steel_registry::blocks::properties::{BlockStateProperties, BoolProperty, EnumProperty};
 use steel_registry::fluid::{FluidState, FluidStateExt};
 use steel_registry::vanilla_block_tags::BlockTag;
-use steel_registry::vanilla_blocks;
+use steel_registry::{vanilla_blocks, vanilla_fluids};
 use steel_utils::types::UpdateFlags;
 use steel_utils::{BlockPos, BlockStateId, Direction};
 
@@ -13,10 +13,10 @@ use crate::behavior::blocks::BigDripleafBlock;
 use crate::behavior::blocks::vegetation::bonemealable::BonemealAction;
 use crate::behavior::context::BlockPlaceContext;
 use crate::behavior::{block::BlockBehavior, blocks::vegetation::bonemealable::Bonemealable};
-use crate::world::{LevelReader, World};
+use crate::world::{LevelReader, ScheduledTickAccess, World};
 use std::sync::Arc;
 
-use super::{BlockRef, default_surviving_state};
+use super::BlockRef;
 
 const WATERLOGGED: BoolProperty = BlockStateProperties::WATERLOGGED;
 const FACING: EnumProperty<Direction> = BlockStateProperties::FACING;
@@ -90,12 +90,41 @@ impl BlockBehavior for BigDripleafStemBlock {
 
         below_check && above_check
     }
-
-    fn get_state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
-        default_surviving_state(self.block, self, context)
-    }
     fn as_bonemealable(&self) -> Option<&dyn Bonemealable> {
         Some(self)
+    }
+    fn get_state_for_placement(&self, _context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
+        Some(self.block.default_state())
+    }
+
+    fn update_shape(
+        &self,
+        state: BlockStateId,
+        world: &dyn ScheduledTickAccess,
+        pos: BlockPos,
+        direction: Direction,
+        _neighbor_pos: BlockPos,
+        _neighbor_state: BlockStateId,
+    ) -> BlockStateId {
+        if (direction == Direction::Down || direction == Direction::Up)
+            && !self.can_survive(state, world, pos)
+        {
+            world.schedule_block_tick_default(pos, self.block, 1);
+        }
+        if state.get_value(&WATERLOGGED) {
+            world.schedule_fluid_tick_default(
+                pos,
+                &vanilla_fluids::WATER,
+                vanilla_fluids::WATER.tick_delay as i32,
+            );
+        }
+
+        state
+    }
+    fn tick(&self, state: BlockStateId, world: &Arc<World>, pos: BlockPos) {
+        if !self.can_survive(state, world, pos) {
+            world.destroy_block(pos, true);
+        }
     }
 }
 impl Bonemealable for BigDripleafStemBlock {
@@ -113,11 +142,7 @@ impl Bonemealable for BigDripleafStemBlock {
             &vanilla_blocks::BIG_DRIPLEAF,
         );
         match head_pos {
-            Some(head_pos) => {
-                let s = BigDripleafBlock::can_grow_into(world, head_pos);
-                println!("{s}");
-                s
-            }
+            Some(head_pos) => BigDripleafBlock::can_grow_into(world, head_pos),
             None => false,
         }
     }
@@ -139,7 +164,6 @@ impl Bonemealable for BigDripleafStemBlock {
         _rng: &mut dyn Rng,
         pos: BlockPos,
     ) {
-        println!("1");
         let forward_pos = Self::get_top_connected_block(
             world,
             pos,
@@ -150,7 +174,6 @@ impl Bonemealable for BigDripleafStemBlock {
         let Some(head_pos) = forward_pos else {
             return;
         };
-        println!("2");
         let place_head_pos = head_pos.above();
         let facing = state.get_value(&FACING);
         Self::place(
@@ -159,7 +182,6 @@ impl Bonemealable for BigDripleafStemBlock {
             world.get_block_state(head_pos).get_fluid_state(),
             facing,
         );
-        println!("3");
         BigDripleafBlock::place(
             world,
             place_head_pos,

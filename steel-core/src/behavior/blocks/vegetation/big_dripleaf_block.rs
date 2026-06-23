@@ -124,32 +124,30 @@ impl BlockBehavior for BigDripleafBlock {
         world: &dyn ScheduledTickAccess,
         pos: BlockPos,
         direction: Direction,
-        neighbor_pos: BlockPos,
+        _neighbor_pos: BlockPos,
         neighbor_state: BlockStateId,
     ) -> BlockStateId {
         if direction == Direction::Down && !self.can_survive(state, world, pos) {
             return vanilla_blocks::AIR.default_state();
-        } else {
-            if state.get_value(&WATERLOGGED) {
-                world.schedule_fluid_tick_default(
-                    pos,
-                    &vanilla_fluids::WATER,
-                    vanilla_fluids::WATER.tick_delay as i32,
-                );
-            }
+        }
+        if state.get_value(&WATERLOGGED) {
+            world.schedule_fluid_tick_default(
+                pos,
+                &vanilla_fluids::WATER,
+                vanilla_fluids::WATER.tick_delay as i32,
+            );
+        }
 
-            if direction == Direction::Up && neighbor_state.get_block() == self.block {
-                vanilla_blocks::BIG_DRIPLEAF_STEM
-                    .default_state()
-                    .with_properties_of(state)
-            } else {
-                println!("1");
-                self.update_shape(state, world, pos, direction, neighbor_pos, neighbor_state)
-            }
+        if direction == Direction::Up && neighbor_state.get_block() == self.block {
+            vanilla_blocks::BIG_DRIPLEAF_STEM
+                .default_state()
+                .with_properties_of(state)
+        } else {
+            state
         }
     }
     fn get_state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
-        let below_state = context.world.get_block_state(context.clicked_pos.below());
+        let below_state = context.world.get_block_state(context.relative_pos.below());
         let below_is_dripleaf_part = below_state.get_block() == &vanilla_blocks::BIG_DRIPLEAF
             || below_state.get_block() == &vanilla_blocks::BIG_DRIPLEAF_STEM;
         let facing = {
