@@ -72,7 +72,7 @@ impl Bonemealable for BushBlock {
         &self,
         state: BlockStateId,
         world: &Arc<World>,
-        _rng: &mut dyn rand::Rng,
+        _rng: &mut dyn Rng,
         pos: BlockPos,
     ) {
         let Some(block_pos) = find_spreadable_neighbor_pos(world, pos, state) else {
