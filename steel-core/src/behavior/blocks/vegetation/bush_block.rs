@@ -68,16 +68,6 @@ impl Bonemealable for BushBlock {
     ) -> bool {
         has_spreadable_neighbor_pos(world, pos, state)
     }
-
-    fn is_bonemeal_success(
-        &self,
-        _state: BlockStateId,
-        _world: &Arc<World>,
-        _rng: &mut dyn Rng,
-        _pos: BlockPos,
-    ) -> bool {
-        true
-    }
     fn perform_bonemeal(
         &self,
         state: BlockStateId,
