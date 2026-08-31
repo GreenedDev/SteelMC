@@ -43,12 +43,13 @@ pub use portal::{
     RespawnAnchorBlock, SoulFireBlock,
 };
 pub use redstone::{
-    ButtonBlock, ComparatorBlock, CopperBulbBlock, DaylightDetectorBlock, DetectorRailBlock,
-    LeverBlock, LightningRodBlock, MovingPistonBlock, NoteBlock, ObserverBlock, PistonBaseBlock,
-    PistonHeadBlock, PoweredBlock, PoweredRailBlock, PressurePlateBlock, PressurePlateSensitivity,
-    RailBlock, RedStoneOreBlock, RedStoneWireBlock, RedstoneLampBlock, RedstoneTorchBlock,
-    RedstoneWallTorchBlock, RepeaterBlock, TargetBlock, TripWireBlock, TripWireHookBlock,
-    WeatheringCopperBulbBlock, WeatheringLightningRodBlock, WeightedPressurePlateBlock,
+    BellBlock, ButtonBlock, ComparatorBlock, CopperBulbBlock, DaylightDetectorBlock,
+    DetectorRailBlock, LeverBlock, LightningRodBlock, MovingPistonBlock, NoteBlock, ObserverBlock,
+    PistonBaseBlock, PistonHeadBlock, PoweredBlock, PoweredRailBlock, PressurePlateBlock,
+    PressurePlateSensitivity, RailBlock, RedStoneOreBlock, RedStoneWireBlock, RedstoneLampBlock,
+    RedstoneTorchBlock, RedstoneWallTorchBlock, RepeaterBlock, TargetBlock, TripWireBlock,
+    TripWireHookBlock, WeatheringCopperBulbBlock, WeatheringLightningRodBlock,
+    WeightedPressurePlateBlock,
 };
 pub(crate) use redstone::{MAX_REDSTONE_SIGNAL, MIN_REDSTONE_SIGNAL};
 pub(crate) use utils::multiface_face_property;

@@ -40,6 +40,11 @@ impl LightningRodBlock {
         // Experimental redstone orientations are intentionally omitted.
         world.update_neighbors_at(pos.relative(front), self.block);
     }
+    fn on_lightning_strike(&self, state: BlockStateId, world: &Arc<World>, pos: BlockPos) {
+        world.set_block(pos, state.set_value(POWERED, true), UpdateFlags::UPDATE_ALL);
+        Self::update_neighbors(&self, state, world, pos);
+        world.schedule_block_tick_default(pos, self.block, delay);
+    }
 }
 
 impl BlockBehavior for LightningRodBlock {
@@ -94,7 +99,6 @@ impl BlockBehavior for LightningRodBlock {
         }
         MIN_REDSTONE_SIGNAL
     }
-    //TODO override onLightningStrike() once it gets implemented
 
     fn tick(&self, state: BlockStateId, world: &Arc<World>, pos: BlockPos) {
         world.set_block(pos, state.set_value(POWERED, true), UpdateFlags::UPDATE_ALL);
