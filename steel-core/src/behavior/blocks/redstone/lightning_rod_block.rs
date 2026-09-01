@@ -35,15 +35,26 @@ impl LightningRodBlock {
     pub const fn new(block: BlockRef) -> Self {
         Self { block }
     }
-    fn update_neighbors(&self, state: BlockStateId, world: &Arc<World>, pos: BlockPos) {
+    fn update_neighbors(block: BlockRef, state: BlockStateId, world: &Arc<World>, pos: BlockPos) {
         let front = state.get_value(FACING).opposite();
         // Experimental redstone orientations are intentionally omitted.
-        world.update_neighbors_at(pos.relative(front), self.block);
+        world.update_neighbors_at(pos.relative(front), block);
     }
-    fn on_lightning_strike(&self, state: BlockStateId, world: &Arc<World>, pos: BlockPos) {
+    pub fn on_lightning_strike(
+        block: BlockRef,
+        state: BlockStateId,
+        world: &Arc<World>,
+        pos: BlockPos,
+    ) {
         world.set_block(pos, state.set_value(POWERED, true), UpdateFlags::UPDATE_ALL);
-        Self::update_neighbors(&self, state, world, pos);
-        world.schedule_block_tick_default(pos, self.block, delay);
+        Self::update_neighbors(block, state, world, pos);
+        world.schedule_block_tick_default(pos, block, ACTIVATION_TICKS);
+        world.level_event(
+            3002,
+            pos,
+            state.get_value(FACING).get_axis().ordinal(),
+            None,
+        );
     }
 }
 
@@ -102,7 +113,7 @@ impl BlockBehavior for LightningRodBlock {
 
     fn tick(&self, state: BlockStateId, world: &Arc<World>, pos: BlockPos) {
         world.set_block(pos, state.set_value(POWERED, true), UpdateFlags::UPDATE_ALL);
-        Self::update_neighbors(self, state, world, pos);
+        Self::update_neighbors(self.block, state, world, pos);
     }
 
     fn affect_neighbors_after_removal(
@@ -113,7 +124,7 @@ impl BlockBehavior for LightningRodBlock {
         _moved_by_piston: bool,
     ) {
         if state.get_value(POWERED) {
-            Self::update_neighbors(self, state, world, pos);
+            Self::update_neighbors(self.block, state, world, pos);
         }
     }
 

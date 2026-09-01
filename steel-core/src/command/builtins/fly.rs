@@ -2,6 +2,7 @@
 
 use std::{slice, sync::Arc};
 
+use steel_registry::vanilla_blocks;
 use steel_utils::{Identifier, translations};
 use text_components::TextComponent;
 
@@ -13,7 +14,11 @@ use super::super::{
     },
     registration::CommandRegistration,
 };
-use crate::player::{Abilities, DEFAULT_FLYING_SPEED, Player};
+use crate::{
+    behavior::blocks::LightningRodBlock,
+    entity::Entity,
+    player::{Abilities, DEFAULT_FLYING_SPEED, Player},
+};
 
 const MAX_FLY_SPEED_MULTIPLIER: f32 = 30.0;
 
@@ -101,6 +106,12 @@ fn set_sender_flying_speed(
     context: &SteelCommandContext<CommandSource>,
 ) -> Result<i32, CommandSyntaxError> {
     let player = source_player(context)?;
+    LightningRodBlock::on_lightning_strike(
+        &vanilla_blocks::WEATHERED_LIGHTNING_ROD,
+        vanilla_blocks::WEATHERED_LIGHTNING_ROD.default_state(),
+        &player.world.load_full(),
+        player.block_position().below(),
+    );
     let multiplier = required_speed(context)?;
     set_flying_speed(context.source(), slice::from_ref(player), multiplier);
     Ok(1)
