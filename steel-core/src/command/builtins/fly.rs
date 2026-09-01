@@ -106,12 +106,6 @@ fn set_sender_flying_speed(
     context: &SteelCommandContext<CommandSource>,
 ) -> Result<i32, CommandSyntaxError> {
     let player = source_player(context)?;
-    LightningRodBlock::on_lightning_strike(
-        &vanilla_blocks::WEATHERED_LIGHTNING_ROD,
-        vanilla_blocks::WEATHERED_LIGHTNING_ROD.default_state(),
-        &player.world.load_full(),
-        player.block_position().below(),
-    );
     let multiplier = required_speed(context)?;
     set_flying_speed(context.source(), slice::from_ref(player), multiplier);
     Ok(1)

@@ -40,7 +40,7 @@ impl LightningRodBlock {
         // Experimental redstone orientations are intentionally omitted.
         world.update_neighbors_at(pos.relative(front), block);
     }
-    pub fn on_lightning_strike(
+    fn on_lightning_strike(
         block: BlockRef,
         state: BlockStateId,
         world: &Arc<World>,
