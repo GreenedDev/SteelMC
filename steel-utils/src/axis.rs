@@ -31,7 +31,7 @@ impl Axis {
         }
     }
     #[must_use]
-    pub const fn ordinal(&self) -> i32 {
+    pub const fn ordinal(self) -> i32 {
         match self {
             Axis::X => 0,
             Axis::Y => 1,
