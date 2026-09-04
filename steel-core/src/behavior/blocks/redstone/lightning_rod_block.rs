@@ -6,7 +6,7 @@ use steel_registry::blocks::block_state_ext::BlockStateExt as _;
 use steel_registry::blocks::properties::{
     BlockStateProperties, BoolProperty, Direction, EnumProperty,
 };
-use steel_registry::fluid::FluidStateExt;
+use steel_registry::level_events;
 use steel_utils::types::UpdateFlags;
 use steel_utils::{BlockPos, BlockStateId};
 
@@ -14,7 +14,6 @@ use crate::behavior::block::schedule_water_tick_if_waterlogged;
 use crate::behavior::blocks::redstone::{MAX_REDSTONE_SIGNAL, MIN_REDSTONE_SIGNAL};
 use crate::behavior::{BlockBehavior, BlockPlaceContext};
 use crate::entity::ai::path::PathComputationType;
-use crate::fluid::get_fluid_state;
 use crate::world::{LevelReader, ScheduledTickAccess, SignalQueryContext, World};
 
 /// Lightning rod behavior.
@@ -40,6 +39,10 @@ impl LightningRodBlock {
         // Experimental redstone orientations are intentionally omitted.
         world.update_neighbors_at(pos.relative(front), block);
     }
+    #[expect(
+        dead_code,
+        reason = "We need to call this function once on_lightning_strike gets implemented in BlockBehavior"
+    )]
     fn on_lightning_strike(
         block: BlockRef,
         state: BlockStateId,
@@ -50,7 +53,7 @@ impl LightningRodBlock {
         Self::update_neighbors(block, state, world, pos);
         world.schedule_block_tick_default(pos, block, ACTIVATION_TICKS);
         world.level_event(
-            3002,
+            level_events::PARTICLES_ELECTRIC_SPARK,
             pos,
             state.get_value(FACING).get_axis().ordinal(),
             None,
@@ -60,13 +63,11 @@ impl LightningRodBlock {
 
 impl BlockBehavior for LightningRodBlock {
     fn get_state_for_placement(&self, context: &BlockPlaceContext<'_>) -> Option<BlockStateId> {
-        let replaced_fluid_state = get_fluid_state(context.world, context.place_pos());
-        let is_water_source = replaced_fluid_state.is_water() && replaced_fluid_state.is_source();
         Some(
             self.block
                 .default_state()
                 .set_value(FACING, context.clicked_face())
-                .set_value(WATERLOGGED, is_water_source),
+                .set_value(WATERLOGGED, context.is_water_source()),
         )
     }
 
@@ -112,7 +113,11 @@ impl BlockBehavior for LightningRodBlock {
     }
 
     fn tick(&self, state: BlockStateId, world: &Arc<World>, pos: BlockPos) {
-        world.set_block(pos, state.set_value(POWERED, true), UpdateFlags::UPDATE_ALL);
+        world.set_block(
+            pos,
+            state.set_value(POWERED, false),
+            UpdateFlags::UPDATE_ALL,
+        );
         Self::update_neighbors(self.block, state, world, pos);
     }
 

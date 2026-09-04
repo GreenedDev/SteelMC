@@ -2,7 +2,6 @@
 
 use std::{slice, sync::Arc};
 
-use steel_registry::vanilla_blocks;
 use steel_utils::{Identifier, translations};
 use text_components::TextComponent;
 
@@ -14,11 +13,7 @@ use super::super::{
     },
     registration::CommandRegistration,
 };
-use crate::{
-    behavior::blocks::LightningRodBlock,
-    entity::Entity,
-    player::{Abilities, DEFAULT_FLYING_SPEED, Player},
-};
+use crate::player::{Abilities, DEFAULT_FLYING_SPEED, Player};
 
 const MAX_FLY_SPEED_MULTIPLIER: f32 = 30.0;
 

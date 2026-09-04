@@ -13,7 +13,7 @@ use crate::{
     world::{LevelReader, ScheduledTickAccess, SignalQueryContext, World},
 };
 
-/// Behavior for all weathering Lantern type blocks
+/// Behavior for all weathering lightning rod type blocks
 #[block_behavior]
 pub struct WeatheringLightningRodBlock {
     lightning_rod: LightningRodBlock,
@@ -22,7 +22,7 @@ pub struct WeatheringLightningRodBlock {
 }
 
 impl WeatheringLightningRodBlock {
-    /// Creates a new weathering lantern block behavior for the given block
+    /// Creates a new weathering lightning rod block behavior for the given block
     #[must_use]
     pub const fn new(block: BlockRef, weather_state: WeatherState) -> Self {
         Self {
