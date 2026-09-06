@@ -81,6 +81,7 @@ impl BlockBehavior for CandleCakeBlock {
             && state.get_value(LIT)
         {
             world.set_block(pos, state.set_value(LIT, false), UpdateFlags::UPDATE_ALL);
+            // TODO: particles!
             world.play_block_sound(
                 &sound_events::BLOCK_CANDLE_EXTINGUISH,
                 pos,
