@@ -126,7 +126,7 @@ impl BatEntity {
         };
         data.id_flags.set(updated);
     }
-    
+
     //just default implementation
     fn update_dirty_mob_effect_entity_data(&self) {
         if !self.living_base.take_effects_dirty() {
