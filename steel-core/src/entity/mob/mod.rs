@@ -339,6 +339,13 @@ pub trait Mob: LivingEntity + Leashable {
 
     fn set_mob_flags(&self, flags: i8);
 
+    /// Returns vanilla `Mob.canBeLeashed`.
+    ///
+    /// Mobs such as bats disable leashing entirely.
+    fn can_be_leashed(&self) -> bool {
+        true
+    }
+
     /// Returns vanilla `Mob.isSaddled`.
     fn is_saddled(&self) -> bool {
         let mut is_saddled = false;
@@ -1717,6 +1724,10 @@ pub trait Mob: LivingEntity + Leashable {
 impl<T: Mob> Leashable for T {
     fn leash_data(&self) -> &SyncMutex<Option<LeashData>> {
         self.mob_base().leash_data()
+    }
+
+    fn can_be_leashed(&self) -> bool {
+        Mob::can_be_leashed(self)
     }
 }
 
