@@ -615,6 +615,12 @@ pub trait Mob: LivingEntity + Leashable {
         *self.mob_base().persistence_required().lock() = true;
     }
 
+    /// Returns whether this mob can be leashed, before its leash state is considered.
+    fn mob_can_be_leashed(&self) -> bool {
+        // TODO(enemy): return false for enemy mobs once hostile mob foundations exist.
+        true
+    }
+
     /// Returns vanilla `Mob.canPickUpLoot`.
     fn can_pick_up_loot(&self) -> bool {
         *self.mob_base().can_pick_up_loot().lock()
@@ -1727,7 +1733,7 @@ impl<T: Mob> Leashable for T {
     }
 
     fn can_be_leashed(&self) -> bool {
-        Mob::can_be_leashed(self)
+        self.mob_can_be_leashed()
     }
 }
 
