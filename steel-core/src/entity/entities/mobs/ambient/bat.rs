@@ -430,7 +430,7 @@ impl Mob for BatEntity {
         &self.mob_base
     }
 
-    fn can_be_leashed(&self) -> bool {
+    fn mob_can_be_leashed(&self) -> bool {
         false
     }
 
@@ -467,7 +467,7 @@ impl Mob for BatEntity {
 #[cfg(test)]
 mod tests {
     use super::{BatEntity, closer_to_center_than};
-    use crate::entity::{Entity, Mob};
+    use crate::entity::{Entity, leash::Leashable};
     use glam::DVec3;
     use simdnbt::borrow::read_compound;
     use simdnbt::owned::NbtCompound;
