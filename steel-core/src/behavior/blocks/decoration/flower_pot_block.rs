@@ -18,6 +18,7 @@ use steel_utils::types::{InteractionHand, UpdateFlags};
 use steel_utils::{BlockPos, BlockStateId, Direction, Identifier};
 
 use crate::behavior::{BlockBehavior, BlockPlaceContext, InteractionResult, InventoryAccess};
+use crate::entity::ai::path::PathComputationType;
 use crate::player::Player;
 use crate::world::game_event::GameEventContext;
 use crate::world::{ScheduledTickAccess, World};
@@ -155,6 +156,14 @@ impl BlockBehavior for FlowerPotBlock {
         } else {
             state
         }
+    }
+
+    fn is_pathfindable(
+        &self,
+        _state: BlockStateId,
+        _computation_type: PathComputationType,
+    ) -> bool {
+        false
     }
 }
 
