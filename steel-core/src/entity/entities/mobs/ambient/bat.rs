@@ -25,13 +25,8 @@ use crate::entity::{
 use crate::physics::MoveResult;
 use crate::world::{World, is_redstone_conductor};
 
-/// Vanilla `Bat.FLAG_RESTING`.
 const FLAG_RESTING: i8 = 1;
-
-/// Vanilla `Bat.BAT_RESTING_TARGETING` range.
 const BAT_RESTING_TARGETING_RANGE: f64 = 4.0;
-
-/// Vanilla default mob step height, used when the attribute is unset.
 const DEFAULT_STEP_HEIGHT: f32 = 0.6;
 
 /// Vanilla `Bat.customServerAiStep` chance divisors (`nextInt` bounds).
@@ -53,7 +48,6 @@ const STEER_STEP: f32 = 0.1;
 /// Forward flight input vanilla assigns to `zza`.
 const FLIGHT_FORWARD_INPUT: f32 = 0.5;
 
-/// Vanilla `Bat` airborne vertical drag.
 const AIRBORNE_Y_DRAG: f64 = 0.6;
 
 /// Vanilla bat entity.
