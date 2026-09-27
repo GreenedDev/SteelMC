@@ -90,7 +90,6 @@ impl BatEntity {
         let mob_base = MobBase::new();
         let mut entity_data = BatEntityData::new();
         living_base.initialize_synced_data(&mut entity_data);
-        // Vanilla `Bat` starts resting on the server; save data may override it.
         entity_data.id_flags.set(FLAG_RESTING);
 
         Self {
@@ -121,7 +120,6 @@ impl BatEntity {
         data.id_flags.set(updated);
     }
 
-    //just default implementation
     fn update_dirty_mob_effect_entity_data(&self) {
         if !self.living_base.take_effects_dirty() {
             return;
@@ -227,8 +225,7 @@ impl BatEntity {
         }
     }
 
-    /// Picks a random target block around the bat, mirroring vanilla's
-    /// `BlockPos.containing` bounds.
+    /// Picks a random target block around the bat.
     fn random_target_position(&self) -> BlockPos {
         let position = self.position();
         BlockPos::containing(
@@ -272,8 +269,6 @@ impl Entity for BatEntity {
 
     fn tick(&self) {
         LivingEntity::tick_living_entity(self);
-
-        // Vanilla `Bat.setupAnimationStates` only drives client-side `AnimationState`s.
 
         if self.is_resting() {
             self.set_velocity(DVec3::ZERO);
@@ -342,7 +337,6 @@ impl Entity for BatEntity {
         _pos: BlockPos,
         _world: &Arc<World>,
     ) {
-        // Vanilla `Bat.checkFallDamage` is a no-op: bats never take fall damage.
     }
 
     fn is_flapping(&self) -> bool {
@@ -350,7 +344,6 @@ impl Entity for BatEntity {
     }
 
     fn hurt(&self, world: &World, source: &DamageSource, amount: f32) -> bool {
-        // Vanilla `Bat.hurtServer` wakes a resting bat before applying damage.
         if !self.is_invulnerable_to(world, source) && self.is_resting() {
             self.set_resting(false);
         }
@@ -406,9 +399,7 @@ impl LivingEntity for BatEntity {
         Some(&sound_events::ENTITY_BAT_DEATH)
     }
 
-    fn push_entities(&self) {
-        // Vanilla `Bat.pushEntities` is a no-op.
-    }
+    fn push_entities(&self) {}
 
     fn server_ai_step(&self) {
         Mob::mob_server_ai_step(self);
