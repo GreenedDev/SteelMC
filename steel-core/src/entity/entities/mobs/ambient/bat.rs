@@ -176,7 +176,7 @@ impl BatEntity {
         let needs_new_target = target_position.is_none()
             || rand::random_range(0..RESTING_RETARGET_CHANCE) == 0
             || target_position.is_some_and(|target| {
-                closer_to_center_than(target, self.position(), TARGET_RECENTER_DISTANCE)
+                target.closer_to_center_than(self.position(), TARGET_RECENTER_DISTANCE)
             });
         if needs_new_target {
             target_position = Some(self.random_target_position());
@@ -243,15 +243,6 @@ impl BatEntity {
                 ),
         )
     }
-}
-
-/// Mirrors vanilla `Vec3i.closerToCenterThan`.
-fn closer_to_center_than(pos: BlockPos, position: DVec3, distance: f64) -> bool {
-    let (center_x, center_y, center_z) = pos.get_center();
-    let dx = center_x - position.x;
-    let dy = center_y - position.y;
-    let dz = center_z - position.z;
-    dx * dx + dy * dy + dz * dz < distance * distance
 }
 
 impl Entity for BatEntity {
@@ -451,7 +442,7 @@ impl Mob for BatEntity {
 
 #[cfg(test)]
 mod tests {
-    use super::{BatEntity, closer_to_center_than};
+    use super::BatEntity;
     use crate::entity::{Entity, leash::Leashable};
     use glam::DVec3;
     use simdnbt::borrow::read_compound;
@@ -459,7 +450,6 @@ mod tests {
     use std::io::Cursor;
     use std::sync::Weak;
     use steel_registry::{init_vanilla_registry, vanilla_entities};
-    use steel_utils::BlockPos;
 
     #[test]
     fn bat_starts_resting_and_round_trips_flags() {
@@ -497,12 +487,5 @@ mod tests {
 
         bat.advance_tick_count();
         assert!(!bat.is_flapping());
-    }
-
-    #[test]
-    fn closer_to_center_uses_block_center() {
-        let pos = BlockPos::new(0, 0, 0);
-        assert!(closer_to_center_than(pos, DVec3::new(0.5, 0.5, 0.5), 1.0));
-        assert!(!closer_to_center_than(pos, DVec3::new(1.5, 0.5, 0.5), 1.0));
     }
 }
