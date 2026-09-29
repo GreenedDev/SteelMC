@@ -102,13 +102,13 @@ impl BatEntity {
         }
     }
 
-    /// Returns whether the bat is perched instead of flying.
+    /// Returns if the bat is resting.
     #[must_use]
     pub fn is_resting(&self) -> bool {
         (self.entity_data.lock().id_flags.get() & FLAG_RESTING) != 0
     }
 
-    /// Switches the bat between perched and flying behavior.
+    /// Sets if the bat is resting.
     pub fn set_resting(&self, resting: bool) {
         let mut data = self.entity_data.lock();
         let current = *data.id_flags.get();
@@ -137,10 +137,7 @@ impl BatEntity {
         self.entity_data.set_base_invisible_flag(display.invisible);
     }
 
-    /// Ticks a perched bat. While the block above can hold it, the bat may roll its
-    /// head to a random yaw and keeps resting as long as no player is nearby.
-    /// Otherwise it takes off, clearing the resting flag and playing the liftoff
-    /// sound unless the bat is silent.
+    /// Ticks the AI while the bat is resting.
     fn tick_resting_ai(&self, world: &World, pos: BlockPos, above: BlockPos) {
         let silent = self.is_silent();
         if is_redstone_conductor(world, world.get_block_state(above), pos) {
@@ -167,11 +164,7 @@ impl BatEntity {
         }
     }
 
-    /// Ticks a flying bat. The bat drops a target that is no longer air or sits at
-    /// or below the world floor, and picks a fresh random target when it has none,
-    /// occasionally, or once the current target gets too close. It then steers its
-    /// velocity toward the target, turns to face the flight direction, and sets
-    /// forward travel input. It may perch again when the block above can hold it.
+    /// Ticks the AI while the bat is flying.
     fn tick_flying_ai(&self, world: &World, above: BlockPos) {
         let mut target_position = *self.target_position.lock();
         if target_position.is_some_and(|target| {
